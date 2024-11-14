@@ -1,0 +1,380 @@
+1. Decision Tree
+tennis.csv
+Day,Outlook,Temperature,Humidity,Wind,PlayTennis
+D1,Sunny,Hot,High,Weak,No
+D2,Sunny,Hot,High,Strong,No
+D3,Overcast,Hot,High,Weak,Yes
+D4,Rain,Mild,High,Weak,Yes
+D5,Rain,Cool,Normal,Weak,Yes
+D6,Rain,Cool,Normal,Strong,No
+D7,Overcast,Cool,Normal,Strong,Yes
+D8,Sunny,Mild,High,Weak,No
+D9,Sunny,Cool,Normal,Weak,Yes
+D10,Rain,Mild,Normal,Weak,Yes
+D11,Sunny,Mild,Normal,Strong,Yes
+D12,Overcast,Mild,High,Strong,Yes
+D13,Overcast,Hot,Normal,Weak,Yes
+D14,Rain,Mild,High,Strong,No
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn import metrics
+
+# Load the dataset
+data = pd.read_csv("tennis.csv")
+
+# Convert categorical variables to dummy/indicator variables
+data_encoded = pd.get_dummies(data.drop(columns=["Day", "PlayTennis"]))
+target = data["PlayTennis"].apply(lambda x: 1 if x == "Yes" else 0)
+
+# Split the dataset into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(data_encoded, target, test_size=0.3, random_state=42)
+
+# Create a Decision Tree Classifier
+clf = DecisionTreeClassifier()
+clf = clf.fit(X_train, y_train)
+
+# Predict on the test data
+y_pred = clf.predict(X_test)
+
+# Calculate the accuracy
+accuracy = metrics.accuracy_score(y_test, y_pred)
+print("Accuracy:", accuracy)
+
+# Optional: Visualize the Decision Tree (requires graphviz)
+from sklearn.tree import export_text
+tree_rules = export_text(clf, feature_names=list(data_encoded.columns))
+print(tree_rules)
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+2.K-means
+data.csv
+Individual,Variable1,Variable2
+1,1.0,1.0
+2,1.5,2.0
+3,3.0,4.0
+4,5.0,7.0
+5,3.5,5.0
+6,4.5,5.0
+7,3.5,4.5
+
+import pandas as pd
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
+
+# Load the dataset
+data = pd.read_csv("data.csv")
+
+# Extract the features for clustering
+X = data[['Variable1', 'Variable2']]
+
+# Apply K-means clustering
+kmeans = KMeans(n_clusters=2, random_state=42)
+data['Cluster'] = kmeans.fit_predict(X)
+
+# Print the clusters
+print(data)
+
+# Plot the clusters
+plt.scatter(data['Variable1'], data['Variable2'], c=data['Cluster'], cmap='viridis')
+plt.xlabel('Variable 1')
+plt.ylabel('Variable 2')
+plt.title('K-means Clustering')
+plt.show()
+
+//From Scratch
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Load the dataset
+data = pd.read_csv("data.csv")
+X = data[['Variable1', 'Variable2']].values
+
+# Parameters
+k = 2  # Number of clusters
+max_iterations = 100
+tolerance = 0.0001
+
+# Step 1: Initialize centroids randomly from the dataset points
+np.random.seed(42)
+centroids = X[np.random.choice(len(X), k, replace=False)]
+
+def calculate_distance(point, centroid):
+    return np.sqrt(np.sum((point - centroid) ** 2))
+
+# K-means algorithm
+for _ in range(max_iterations):
+    # Step 2: Assign each data point to the closest centroid
+    clusters = [[] for _ in range(k)]
+    for point in X:
+        distances = [calculate_distance(point, centroid) for centroid in centroids]
+        closest_centroid = np.argmin(distances)
+        clusters[closest_centroid].append(point)
+    
+    # Step 3: Update the centroids by calculating the mean of each cluster
+    new_centroids = np.array([np.mean(cluster, axis=0) if cluster else centroids[i]
+                              for i, cluster in enumerate(clusters)])
+    
+    # Step 4: Check for convergence
+    if np.all(np.abs(new_centroids - centroids) < tolerance):
+        break
+    
+    centroids = new_centroids
+
+# Assign each point to the final clusters
+cluster_labels = np.zeros(len(X), dtype=int)
+for i, point in enumerate(X):
+    distances = [calculate_distance(point, centroid) for centroid in centroids]
+    cluster_labels[i] = np.argmin(distances)
+
+# Print the clusters
+data['Cluster'] = cluster_labels
+print(data)
+
+# Plot the clusters
+colors = ['blue', 'green']
+for i in range(k):
+    cluster_points = X[cluster_labels == i]
+    plt.scatter(cluster_points[:, 0], cluster_points[:, 1], s=50, color=colors[i], label=f'Cluster {i+1}')
+plt.scatter(centroids[:, 0], centroids[:, 1], s=200, color='red', marker='X', label='Centroids')
+plt.xlabel('Variable 1')
+plt.ylabel('Variable 2')
+plt.title('K-means Clustering (from scratch)')
+plt.legend()
+plt.show()
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+3.Linear Regression
+import numpy as np
+
+# Data
+x = np.array([0, 1, 2, 3, 4])
+y = np.array([2, 3, 5, 4, 6])
+
+# Calculate the means of x and y
+x_mean = np.mean(x)
+y_mean = np.mean(y)
+
+# Calculate the coefficients a and b
+numerator = np.sum((x - x_mean) * (y - y_mean))
+denominator = np.sum((x - x_mean) ** 2)
+a = numerator / denominator
+b = y_mean - a * x_mean
+
+# Print the regression line
+print(f"The linear regression line is: y = {a:.2f}x + {b:.2f}")
+
+# Part (b): Estimate the value of y when x = 10
+x_new = 10
+y_estimate = a * x_new + b
+print(f"Estimated value of y when x = 10: {y_estimate:.2f}")
+
+# Part (c): Calculate the Mean Squared Error
+y_pred = a * x + b
+mse = np.mean((y - y_pred) ** 2)
+print(f"Mean Squared Error (MSE): {mse:.2f}")
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+4.Find-S Algorithm
+data.csv
+Example,Sky,AirTemp,Humidity,Wind,Water,Forecast,EnjoySport
+1,Sunny,Warm,Normal,Strong,Warm,Same,Yes
+2,Sunny,Warm,High,Strong,Warm,Same,Yes
+3,Rainy,Cold,High,Strong,Warm,Change,No
+4,Sunny,Warm,High,Strong,Cool,Change,Yes
+
+
+import pandas as pd
+import numpy as np
+
+# Load the dataset
+data = pd.read_csv("data.csv")
+
+# Extract the features and target variable
+features = data.columns[1:-1]
+target = data['EnjoySport']
+
+# Initialize the most specific hypothesis
+hypothesis = ['Ø'] * len(features)
+
+# Apply the Find-S algorithm
+for i, row in data.iterrows():
+    if row['EnjoySport'] == 'Yes':  # Consider only positive examples
+        if hypothesis[0] == 'Ø':  # First positive example initializes the hypothesis
+            hypothesis = row[1:-1].values
+        else:
+            for j in range(len(hypothesis)):
+                if hypothesis[j] != row[j + 1]:
+                    hypothesis[j] = '?'  # Generalize differing attributes
+
+# Print the final hypothesis
+print("Maximally Specific Hypothesis:", hypothesis)
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+5.Gaussian Mixture Model
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn import datasets
+from sklearn.mixture import GaussianMixture
+from sklearn.decomposition import PCA
+
+# Load the Iris dataset
+iris = datasets.load_iris()
+X = iris.data  # features
+y = iris.target  # actual labels (optional, only used for comparison)
+
+# Apply PCA to reduce dimensions to 2 for visualization
+pca = PCA(n_components=2)
+X_reduced = pca.fit_transform(X)
+
+# Fit the Gaussian Mixture Model
+gmm = GaussianMixture(n_components=3, random_state=42)
+gmm.fit(X_reduced)
+labels = gmm.predict(X_reduced)
+
+# Define colors for the clusters
+colors = ['red', 'green', 'yellow']
+cluster_colors = [colors[label] for label in labels]
+
+# Plot the GMM clusters
+plt.figure(figsize=(8, 6))
+plt.scatter(X_reduced[:, 0], X_reduced[:, 1], c=cluster_colors, marker='o', edgecolor='k', s=50)
+plt.xlabel("PCA Component 1")
+plt.ylabel("PCA Component 2")
+plt.title("Gaussian Mixture Model Clustering on Iris Dataset")
+
+# Show plot
+plt.show()
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+6.SVM
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+
+# Load the dataset
+data = pd.read_csv("data_points.csv")
+X = data[['X', 'Y']].values
+
+# Assign labels for demonstration (0 and 1)
+# In real-world applications, labels should come from actual classes
+y = np.array([0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1])
+
+# Standardize the data
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
+
+# Fit the SVM model
+svm_model = SVC(kernel='linear')
+svm_model.fit(X, y)
+
+# Get the separating hyperplane
+w = svm_model.coef_[0]
+b = svm_model.intercept_[0]
+slope = -w[0] / w[1]
+intercept = -b / w[1]
+
+# Generate x values for the hyperplane and margins
+x_vals = np.linspace(-2, 2, 100)
+hyperplane = slope * x_vals + intercept
+
+# Calculate the margin lines (support vectors)
+margin = 1 / np.sqrt(np.sum(w ** 2))
+marginal_line1 = hyperplane + margin
+marginal_line2 = hyperplane - margin
+
+# Plot the data points
+plt.figure(figsize=(8, 6))
+colors = ['blue' if label == 0 else 'red' for label in y]
+plt.scatter(X[:, 0], X[:, 1], c=colors, s=50, edgecolor='k', label='Data Points')
+
+# Plot the hyperplane and margins
+plt.plot(x_vals, hyperplane, 'k-', label='Optimal Hyperplane')
+plt.plot(x_vals, marginal_line1, 'g--', label='Margin Plane 1')
+plt.plot(x_vals, marginal_line2, 'g--', label='Margin Plane 2')
+
+# Highlight the support vectors
+plt.scatter(svm_model.support_vectors_[:, 0], svm_model.support_vectors_[:, 1], 
+            s=100, facecolors='none', edgecolors='k', label='Support Vectors')
+
+plt.xlabel("X (Standardized)")
+plt.ylabel("Y (Standardized)")
+plt.legend()
+plt.title("SVM with Optimal Hyperplane and Marginal Planes")
+plt.show()
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+7.KNN
+
+Height (in cms),Weight (in kgs),T Shirt Size
+158,58,M
+158,59,M
+158,63,M
+160,59,M
+160,60,M
+163,60,M
+163,61,M
+160,64,L
+163,64,L
+165,61,L
+165,62,L
+165,65,L
+168,62,L
+168,63,L
+168,66,L
+170,63,L
+170,64,L
+170,68,L
+
+
+import pandas as pd
+import numpy as np
+from collections import Counter
+
+# Step 1: Load the dataset
+df = pd.read_csv('data.csv')
+
+# Step 2: Prepare the data
+X = df[['Height (in cms)', 'Weight (in kgs)']].values  # Features
+y = df['T Shirt Size'].values  # Target variable
+
+# Step 3: Define the distance function (Euclidean distance)
+def euclidean_distance(point1, point2):
+    return np.sqrt(np.sum((point1 - point2) ** 2))
+
+# Step 4: Implement the K-NN algorithm
+def knn_predict(X, y, new_point, k=3):
+    # Calculate distances from the new point to all other points
+    distances = []
+    for i in range(len(X)):
+        distance = euclidean_distance(new_point, X[i])
+        distances.append((distance, y[i]))
+
+    # Sort by distance and select the k nearest neighbors
+    distances.sort(key=lambda x: x[0])
+    nearest_neighbors = distances[:k]
+
+    # Get the most common class among the neighbors
+    classes = [neighbor[1] for neighbor in nearest_neighbors]
+    most_common = Counter(classes).most_common(1)[0][0]
+    
+    return most_common
+
+# Step 5: Predict T-shirt size for a new customer
+new_customer = np.array([160, 62])  # Replace with the height and weight of the new customer
+predicted_size = knn_predict(X, y, new_customer, k=3)
+
+print(f"The predicted T-shirt size for the new customer is: {predicted_size}")
+
+
+
